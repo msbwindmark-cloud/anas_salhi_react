@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+// const api = axios.create({
+//     baseURL: 'http://127.0.0.1:8000/api/', // Tu URL de Django
+// });
+
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/', // Tu URL de Django
+    baseURL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://127.0.0.1:8000/api/'           // Si estás en tu PC
+        : 'https://anassalhi.pythonanywhere.com/api/', // Si estás en la nube
 });
 
 // INTERCEPTOR DE PETICIÓN: Añade el token a cada mensaje que envías
@@ -28,8 +34,19 @@ api.interceptors.response.use(
             
             try {
                 const refreshToken = localStorage.getItem('refresh_token');
+
+                // Determinamos la URL base dinámicamente
+                const rootURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? 'http://127.0.0.1:8000'
+                    : 'https://anassalhi.pythonanywhere.com';
+
                 // Pedimos un nuevo access_token usando el refresh_token
-                const res = await axios.post('http://127.0.0.1:8000/api/auth/login/refresh/', {
+                // const res = await axios.post('http://127.0.0.1:8000/api/auth/login/refresh/', {
+                //     refresh: refreshToken,
+                // });
+                
+                // Usamos esa URL para pedir el nuevo token
+                const res = await axios.post(`${rootURL}/api/auth/login/refresh/`, {
                     refresh: refreshToken,
                 });
 
