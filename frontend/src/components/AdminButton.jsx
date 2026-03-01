@@ -7,10 +7,15 @@ const AdminButton = () => {
 
     // Solo se muestra si el usuario existe y tiene is_superuser en true
     if (!user || !user.is_superuser) return null;
+    
+    // --- CAMBIO AQUÍ: Detectamos la URL correcta ---
+    const adminUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://127.0.0.1:8000/admin/' 
+        : '/admin/'; // En producción usa la ruta relativa
 
     return (
         <a 
-            href="http://127.0.0.1:8000/admin/" 
+            href={adminUrl} 
             target="_blank" 
             rel="noopener noreferrer"
             className="fixed bottom-6 right-6 bg-orange-600 hover:bg-orange-700 text-white p-4 rounded-full shadow-2xl transition-all flex items-center gap-2 group z-50"
