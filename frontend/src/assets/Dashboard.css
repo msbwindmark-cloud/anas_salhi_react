@@ -1,0 +1,48 @@
+@media print {
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ocultar interfaz de la web y botones */
+  .print\:hidden, 
+  button, 
+  .bg-blue-50, 
+  .bg-red-600,
+  nav, 
+  footer {
+    display: none !important;
+  }
+
+  /* SI ESTAMOS IMPRIMIENDO UN SOLO CHÓFER */
+  body[class*="print-only-"] .max-w-7xl {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ocultar la cabecera de los cuadraditos de buses y el título de la fecha si es impresión individual */
+  body[class*="print-only-"] .grid.grid-cols-1,
+  body[class*="print-only-"] .text-center.py-2.border-y-2 {
+    display: none !important;
+  }
+
+  /* Ocultar todos los chóferes por defecto en modo individual */
+  body[class*="print-only-"] .space-y-10 > div {
+    display: none !important;
+  }
+
+  /* Mostrar SOLO el chófer seleccionado y forzar que esté al principio de la página */
+  body.print-only-YOUSSEF .driver-card-YOUSSEF,
+  body.print-only-ALI .driver-card-ALI,
+  body.print-only-OMAR .driver-card-OMAR,
+  body.print-only-AYOUB .driver-card-AYOUB,
+  body.print-only-EL-MEHDI .driver-card-EL-MEHDI {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    border: 2px solid black !important;
+  }
+}
