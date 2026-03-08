@@ -20,6 +20,7 @@ import {
   Text,
   View,
   StyleSheet,
+  Image,
 } from "@react-pdf/renderer";
 
 // --- 1. DISEÑO DEL PDF (ESTILOS TIPO TABLA) ---
@@ -206,6 +207,294 @@ const DriverPDF = ({ driverName, data, date }) => (
   </Document>
 );
 
+// --- 2. ESTILOS PARA EL NUEVO PDF (ESTILO VOUCHER / AKCHOUR TRAVEL) ---
+const voucherStyles = StyleSheet.create({
+  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", lineHeight: 1.5 },
+  // 1. Cambiamos el header para que los elementos se apilen verticalmente
+  // Cabecera sin bordes para que la imagen luzca como en el PDF original
+  headerSection: {
+    flexDirection: "column",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  // Imagen grande que ocupa la parte superior
+  logo: {
+    width: "100%", // Ocupa todo el ancho disponible
+    height: "auto",
+    marginBottom: 15,
+  },
+
+  voucherTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginVertical: 10,
+    textDecoration: "underline",
+    textTransform: "uppercase",
+  },
+
+  infoGrid: {
+    marginVertical: 15,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderStyle: "solid",
+    borderRadius: 8,
+  },
+
+  infoRow: {
+    flexDirection: "row",
+    marginBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    borderBottomStyle: "solid",
+    paddingBottom: 2,
+  },
+
+  label: {
+    width: 160,
+    fontWeight: "bold",
+    color: "#333",
+  },
+
+  value: {
+    flex: 1,
+    color: "#000",
+  },
+  tableHeader: {
+    backgroundColor: "#1e40af",
+    color: "white",
+    flexDirection: "row",
+    fontWeight: "bold",
+    padding: 4, // Un poco más compacto
+    fontSize: 8, // Fuente pequeña para que quepa todo
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    borderBottomStyle: "solid",
+    padding: 4,
+    alignItems: "center",
+    fontSize: 8,
+  },
+  // Definimos anchos precisos para que todo quepa en horizontal
+  colEx: { width: "15%" }, // Excursion
+  colPax: { width: "5%", textAlign: "center" }, // Pax
+  colPhone: { width: "15%" }, // Teléfono
+  colClient: { width: "20%" }, // Nombre
+  colAgent: { width: "10%" }, // Agencia/Guía
+  colLang: { width: "10%" }, // Idioma
+  colPick: { width: "25%" }, // Punto de encuentro
+
+  // Estilo para el pie de página legal (Sacado del original)
+  footerLegal: {
+    marginTop: 20,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#ccc",
+    fontSize: 7,
+    textAlign: "center",
+    color: "#666",
+    lineHeight: 1.5,
+  },
+
+  tableLabel: { fontSize: 9, fontWeight: "bold" },
+
+  footer: {
+    marginTop: 30,
+    textAlign: "center",
+    fontSize: 8,
+    color: "#999",
+    borderTopWidth: 1, // Cambiado de borderTop
+    borderTopColor: "#999",
+    borderTopStyle: "solid",
+    paddingTop: 10,
+  },
+  descriptionText: {
+    fontSize: 10,
+    textAlign: "center",
+    marginHorizontal: 40,
+    marginBottom: 15,
+    fontStyle: "italic",
+    color: "#333",
+    lineHeight: 1.4,
+  },
+  boldText: {
+    fontWeight: "bold",
+  },
+});
+
+// --- 3. COMPONENTE NUEVO: VOUCHER ESTILO AKCHOUR ---
+const VoucherPDF = ({ driverName, data, date }) => {
+  // Protección: Si no hay datos, devolvemos un documento vacío para que no rompa el botón
+  if (!data || !data.services || data.services.length === 0) {
+    return (
+      <Document>
+        <Page>
+          <Text>Chargement...</Text>
+        </Page>
+      </Document>
+    );
+  }
+
+  const firstService = data.services[0];
+
+  return (
+    <Document>
+      <Page size="A4" style={voucherStyles.page}>
+        {/* 1. Cabecera con Imagen Grande (Estilo Salhi Tours) */}
+        <View style={voucherStyles.headerSection}>
+          <Image src="/salhi_tours.png" style={voucherStyles.logo} />
+        </View>
+
+        {/* 2. Título Central */}
+        <Text style={voucherStyles.voucherTitle}>VOUCHER / BON DE VOYAGE</Text>
+
+        {/* 3. FRASE DINÁMICA (NUEVA) */}
+        <Text style={voucherStyles.descriptionText}>
+          L'agence de voyage{" "}
+          <Text style={voucherStyles.boldText}>"SALHI TOURS"</Text> organise une
+          excursion, en collaboration avec l'agence de transport touristique{" "}
+          <Text style={voucherStyles.boldText}>
+            {data.transport_touristique || "Akchour Travel"}
+          </Text>
+        </Text>
+
+        {/* 3. Cuadro de Información Reorganizado */}
+        <View style={voucherStyles.infoGrid}>
+          {/* 1. Fecha */}
+          <View style={voucherStyles.infoRow}>
+            <Text style={voucherStyles.label}>Date:</Text>
+            <Text style={voucherStyles.value}>{date}</Text>
+          </View>
+
+          {/* 2. Transportista */}
+          <View style={voucherStyles.infoRow}>
+            <Text style={voucherStyles.label}>Transport Touristique:</Text>
+            <Text style={voucherStyles.value}>
+              {data.transport_touristique || "Akchour Travel / Salhi Tours"}
+            </Text>
+          </View>
+
+          {/* 3. Chauffeur */}
+          <View style={voucherStyles.infoRow}>
+            <Text style={voucherStyles.label}>Chauffeur:</Text>
+            <Text style={voucherStyles.value}>{driverName}</Text>
+          </View>
+
+          {/* 4. Matricule (En tu web suele ser matricule_bus o bus_matricule) */}
+          {/* MATRÍCULA: Cambiado a vehicle_plate que es el que usas en el Dashboard */}
+          <View style={voucherStyles.infoRow}>
+            <Text style={voucherStyles.label}>Véhicule (Matricule):</Text>
+            <Text style={voucherStyles.value}>
+              {firstService?.vehicle_plate || "N/A"}
+            </Text>
+          </View>
+
+          {/* 5. Destination (En tu web es excursion_name) */}
+          <View style={voucherStyles.infoRow}>
+            <Text style={voucherStyles.label}>Destination:</Text>
+            <Text style={voucherStyles.value}>
+              {data.services[0]?.excursion_name || "N/A"}
+            </Text>
+          </View>
+
+          {/* 6. Total Passagers (Usando num_people como en tu tabla web) */}
+          <View style={voucherStyles.infoRow}>
+            <Text style={voucherStyles.label}>Total Passagers:</Text>
+            <Text style={[voucherStyles.value, { fontWeight: "bold" }]}>
+              {data.services.reduce(
+                (sum, s) => sum + (Number(s.num_people) || 0),
+                0
+              )}{" "}
+              PAX
+            </Text>
+          </View>
+        </View>
+
+        {/* Sección de la Tabla */}
+        <Text
+          style={{
+            marginTop: 15,
+            marginBottom: 5,
+            fontWeight: "bold",
+            fontSize: 10,
+          }}
+        >
+          • Informations sur les Passagers:
+        </Text>
+
+        {/* Encabezado con todos los campos del PDF original */}
+        <View style={voucherStyles.tableHeader}>
+          <Text style={voucherStyles.colEx}>Excursion</Text>
+          <Text style={voucherStyles.colPax}>Pax</Text>
+          <Text style={voucherStyles.colPhone}>Contact</Text>
+          <Text style={voucherStyles.colClient}>Nom du Client</Text>
+          <Text style={voucherStyles.colAgent}>Agence</Text>
+          <Text style={voucherStyles.colLang}>Langue</Text>
+          <Text style={voucherStyles.colPick}>Point de rencontre</Text>
+        </View>
+
+        {/* Filas de Datos - CORREGIDO CON TUS CAMPOS DE LA WEB */}
+        {data.services.map((service, index) => (
+          <View key={index} style={voucherStyles.tableRow}>
+            {/* En la web es b.excursion_name */}
+            <Text style={voucherStyles.colEx}>
+              {service.excursion_name || "N/A"}
+            </Text>
+
+            {/* En la web es b.num_people */}
+            <Text style={voucherStyles.colPax}>
+              {service.num_people || "0"}
+            </Text>
+
+            <Text style={voucherStyles.colPhone}>
+              {service.client_phone || "S/N"}
+            </Text>
+
+            <Text style={voucherStyles.colClient}>
+              {service.client_name || "N/A"}
+            </Text>
+
+            {/* En la web es b.agency_name */}
+            <Text style={voucherStyles.colAgent}>
+              {service.agency_name || "N/A"}
+            </Text>
+
+            <Text style={voucherStyles.colLang}>
+              {service.language || "N/A"}
+            </Text>
+
+            {/* En la web usas b.pickup_address y b.pickup_location_detail */}
+            <Text style={voucherStyles.colPick}>
+              {`${service.pickup_address || ""} ${service.pickup_location_detail || ""}`.trim() ||
+                "N/A"}
+            </Text>
+          </View>
+        ))}
+
+        <View style={voucherStyles.footerLegal}>
+          <Text>
+            Ce voucher est délivré pour tous les besoins relatifs à l'excursion
+            et doit être présenté au moment de besoin.
+          </Text>
+          <Text style={{ marginTop: 5 }}>Tanger, le {date}</Text>
+          <Text style={{ marginTop: 10 }}>
+            ADRESSE: AVENUE PRINCE HERITIER CENTRE NERMINE ENTRESOL LOCAL NO 51
+            TANGER
+          </Text>
+          <Text>
+            RC: 149027 | IF: 65916812 | CNSS: 5333821 | ICE: 0034816320000091
+          </Text>
+          <Text>E-mail: info@salhitours.com</Text>
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
 const Dashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   // --- AÑADE ESTA LÍNEA AQUÍ ABAJO ---
@@ -255,13 +544,17 @@ const Dashboard = () => {
   // Función para generar el timestamp exacto (Año-Mes-Día_Hora-Min-Seg)
   const getPreciseTimestamp = () => {
     const now = new Date();
-    const date = now.toISOString().split('T')[0]; // 2026-03-01
-    const time = now.getHours().toString().padStart(2, '0') + 'h' + 
-                now.getMinutes().toString().padStart(2, '0') + 'm' + 
-                now.getSeconds().toString().padStart(2, '0') + 's';
+    const date = now.toISOString().split("T")[0]; // 2026-03-01
+    const time =
+      now.getHours().toString().padStart(2, "0") +
+      "h" +
+      now.getMinutes().toString().padStart(2, "0") +
+      "m" +
+      now.getSeconds().toString().padStart(2, "0") +
+      "s";
     return `${date}_${time}`;
   };
-  
+
   // --- EXPORTAR SOLO UN CHÓFER A EXCEL ---
   const exportDriverToExcel = (driverName, services) => {
     const dataToExport = services.map((b) => ({
@@ -656,12 +949,27 @@ const Dashboard = () => {
                           date={dateStr}
                         />
                       }
-                      fileName={`Planning_${driver.replace(/\s+/g, '_')}_${getPreciseTimestamp()}.pdf`}
+                      fileName={`Planning_${driver.replace(/\s+/g, "_")}_${getPreciseTimestamp()}.pdf`}
                       className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-red-700"
                     >
                       {({ loading }) =>
                         loading ? "Génération..." : "📄 Télécharger PDF"
                       }
+                    </PDFDownloadLink>
+
+                    {/* BOTÓN 2: EL NUEVO (ESTILO AKCHOUR) */}
+                    <PDFDownloadLink
+                      document={
+                        <VoucherPDF
+                          driverName={driver}
+                          data={groupedBookings[driver]}
+                          date={dateStr}
+                        />
+                      }
+                      fileName={`Voucher_${driver.replace(/\s+/g, "_")}_${getPreciseTimestamp()}.pdf`}
+                      className="bg-blue-700 text-white px-3 py-1.5 rounded text-[10px] font-bold hover:bg-blue-800 transition-colors flex items-center gap-1"
+                    >
+                      {({ loading }) => (loading ? "..." : "📜 Voucher Pro")}
                     </PDFDownloadLink>
                   </div>
                 </div>

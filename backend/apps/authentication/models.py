@@ -149,12 +149,12 @@ class Booking(models.Model):
     time = models.TimeField(verbose_name="Heure")
     
     # Relations
-    driver = models.ForeignKey(Driver, on_delete=models.SET_NULL, null=True, related_name='bookings', verbose_name="Chauffeur")
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, related_name='bookings', verbose_name="Véhicule")
-    guide = models.ForeignKey(Guide, on_delete=models.SET_NULL, null=True, related_name='bookings', verbose_name="Guide")
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='bookings', verbose_name="Client")
-    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, verbose_name="Agence")
-    excursion = models.ForeignKey(Excursion, on_delete=models.SET_NULL, null=True, verbose_name="Excursion")
+    driver = models.ForeignKey(Driver, on_delete=models.PROTECT, null=True, related_name='bookings', verbose_name="Chauffeur")
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, null=True, related_name='bookings', verbose_name="Véhicule")
+    guide = models.ForeignKey(Guide, on_delete=models.PROTECT, null=True, related_name='bookings', verbose_name="Guide")
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='bookings', verbose_name="Client")
+    provider = models.ForeignKey(Provider, on_delete=models.PROTECT, verbose_name="Agence")
+    excursion = models.ForeignKey(Excursion, on_delete=models.PROTECT, null=True, verbose_name="Excursion")
     
     # Détails
     num_people = models.IntegerField(default=1, verbose_name="Nombre de personnes")
@@ -184,3 +184,19 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.date} {self.time} - {self.client.name}"
+    
+    
+
+class HistorialEliminacion(models.Model):
+    modelo = models.CharField(max_length=100)
+    datos_eliminados = models.JSONField()
+    datos_legibles = models.TextField(blank=True, null=True)
+    
+    # CAMBIA ESTO: De ForeignKey a CharField
+    # usuario = models.ForeignKey(settings.AUTH_USER_MODEL, ...) # <-- Borra o comenta esta
+    usuario = models.CharField(max_length=255, null=True, blank=True) # <-- Pon esta
+    
+    fecha_eliminacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-fecha_eliminacion']

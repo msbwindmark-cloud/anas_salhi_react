@@ -37,7 +37,7 @@ SECRET_KEY = 'django-insecure-54$!l&o+(!wfm&f@%5!)ob2eh-u(^fp4=8srx+6e%q2s(jbp+c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['anassalhi.pythonanywhere.com']
+ALLOWED_HOSTS = ['anassalhi.pythonanywhere.com','127.0.0.1', 'localhost']
 
 # Añade esto para que el login del admin no te rebote por seguridad
 CSRF_TRUSTED_ORIGINS = ['https://anassalhi.pythonanywhere.com']
