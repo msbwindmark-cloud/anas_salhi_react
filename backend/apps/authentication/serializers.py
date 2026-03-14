@@ -48,29 +48,55 @@ class DriverSerializer(serializers.ModelSerializer):
         model = Driver
         fields = ['name', 'phone']
 
+# class BookingSerializer(serializers.ModelSerializer):
+#     driver_name = serializers.ReadOnlyField(source='driver.name')
+#     vehicle_plate = serializers.ReadOnlyField(source='vehicle.plate_number')
+#     client_name = serializers.ReadOnlyField(source='client.name')
+#     # --- NUEVOS CAMPOS ---
+#     client_phone = serializers.ReadOnlyField(source='client.phone')
+#     client_email = serializers.ReadOnlyField(source='client.email')
+#     guide_name = serializers.ReadOnlyField(source='guide.name')
+#     # ---------------------
+#     excursion_name = serializers.ReadOnlyField(source='excursion.name')
+#     agency_name = serializers.ReadOnlyField(source='provider.name')
+
+#     class Meta:
+#         model = Booking
+#         fields = [
+#             'id', 'date', 'time', 'driver_name', 'vehicle_plate', 
+#             'client_name', 'client_phone', 'client_email', # Añadidos
+#             'num_people', 'excursion_name', 'guide_name',  # Añadido
+#             'language', 'pickup_address', 'pickup_location_details',
+#             'agency_name', 'observations'
+#         ]
+        
 class BookingSerializer(serializers.ModelSerializer):
     driver_name = serializers.ReadOnlyField(source='driver.name')
     vehicle_plate = serializers.ReadOnlyField(source='vehicle.plate_number')
     client_name = serializers.ReadOnlyField(source='client.name')
-    # --- NUEVOS CAMPOS ---
     client_phone = serializers.ReadOnlyField(source='client.phone')
     client_email = serializers.ReadOnlyField(source='client.email')
     guide_name = serializers.ReadOnlyField(source='guide.name')
-    # ---------------------
     excursion_name = serializers.ReadOnlyField(source='excursion.name')
     agency_name = serializers.ReadOnlyField(source='provider.name')
+    
+    # --- LA CORRECCIÓN CLAVE AQUÍ ---
+    # Sacamos el nombre de la nueva tabla Location
+    pickup_location_name = serializers.ReadOnlyField(source='pickup_location_details.name')
+    # Sacamos las coordenadas por si React las necesita para un botón
+    pickup_location_gps = serializers.ReadOnlyField(source='pickup_location_details.gps_coordinates')
 
     class Meta:
         model = Booking
         fields = [
             'id', 'date', 'time', 'driver_name', 'vehicle_plate', 
-            'client_name', 'client_phone', 'client_email', # Añadidos
-            'num_people', 'excursion_name', 'guide_name',  # Añadido
-            'language', 'pickup_address', 'pickup_location_detail',
+            'client_name', 'client_phone', 'client_email',
+            'num_people', 'excursion_name', 'guide_name',
+            'language', 'pickup_address', 
+            'pickup_location_name',  # Usamos este nuevo
+            'pickup_location_gps',   # Opcional para React
             'agency_name', 'observations'
         ]
-        
-
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
