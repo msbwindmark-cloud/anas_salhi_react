@@ -1,12 +1,12 @@
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
-from .models import HistorialEliminacion, User, Booking, Driver, Vehicle, Client, Excursion, Provider, Guide
+from .models import HistorialEliminacion, User, Booking, Driver, Vehicle, Client, Excursion, Provider, Guide, Location,ClientAddress
 import json # Asegúrate de tener este import arriba
 from decimal import Decimal
 
 
-modelos_a_vigilar = [User, Booking, Driver, Vehicle, Client, Excursion, Provider, Guide]
+modelos_a_vigilar = [User, Booking, Driver, Vehicle, Client, Excursion, Provider, Guide, Location, ClientAddress]
 
 @receiver(post_delete)
 def log_eliminacion(sender, instance, **kwargs):

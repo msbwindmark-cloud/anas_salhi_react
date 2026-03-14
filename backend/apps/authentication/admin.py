@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.db.models import Sum
-from .models import User, Provider, Client, Guide, Vehicle, Driver, Excursion, Booking, HistorialEliminacion
+from .models import User, Provider, Client, Guide, Vehicle, Driver, Excursion, Booking, HistorialEliminacion, Location, ClientAddress
 import json
 from django.utils.safestring import mark_safe
+from django.utils.html import format_html # Importa esto arriba del todo
 
 
 @admin.register(User)
@@ -27,10 +28,30 @@ class UserAdmin(admin.ModelAdmin):
             log_eliminacion(sender=obj.__class__, instance=obj)
         queryset.delete()
 
+@admin.register(ClientAddress)
+class ClientAddressAdmin(admin.ModelAdmin):
+    list_display = ('name', 'city')
+    search_fields = ('name', 'city', 'full_address')
+
+    # Lógica de borrado seguro para las direcciones
+    def delete_model(self, request, obj):
+        obj._usuario_que_borra = request.user
+        from .signals import log_eliminacion
+        log_eliminacion(sender=obj.__class__, instance=obj)
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        from .signals import log_eliminacion
+        for obj in queryset:
+            obj._usuario_que_borra = request.user
+            log_eliminacion(sender=obj.__class__, instance=obj)
+        queryset.delete()
+        
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'phone', 'language')
-    search_fields = ('name', 'phone')
+    list_display = ('name', 'phone', 'language', 'provider','client_address_link', 'excursion')
+    list_filter = ('provider', 'language', 'excursion')
+    search_fields = ('name', 'phone', 'client_address_link__name')
     
     def delete_model(self, request, obj):
         # 1. Pegamos el usuario al objeto
@@ -69,15 +90,67 @@ class DriverAdmin(admin.ModelAdmin):
             from .signals import log_eliminacion
             log_eliminacion(sender=obj.__class__, instance=obj)
         queryset.delete()
-    
+
+
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'address', 'gps_coordinates')
+    search_fields = ('name', 'address')
+
+    def delete_model(self, request, obj):
+        obj._usuario_que_borra = request.user
+        from .signals import log_eliminacion
+        log_eliminacion(sender=obj.__class__, instance=obj)
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            obj._usuario_que_borra = request.user
+            from .signals import log_eliminacion
+            log_eliminacion(sender=obj.__class__, instance=obj)
+        queryset.delete()   
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     # Columnas que verás en la lista (como en tu hoja)
-    list_display = ('date', 'time', 'driver', 'vehicle', 'client', 'num_people', 'excursion', 'language')
-    list_filter = ('date', 'driver', 'provider')
-    search_fields = ('client__name', 'pickup_address')
-
+    list_display = ('etiqueta_idioma','excursion','date', 'time', 'driver', 'vehicle', 'client', 'num_people', 'pickup_location_details', 'ver_mapa','language')
+    list_filter = ('date', 'excursion','language', 'driver', 'provider',  'pickup_location_details')
+    search_fields = ('client__name', 'pickup_address', 'pickup_location_details__name')
+    
+    def etiqueta_idioma(self, obj):
+        # Definimos colores según el idioma para separar visualmente
+        colores = {
+            'FR': '#e3f2fd', # Azul clarito
+            'EN': '#f1f8e9', # Verde clarito
+            'ES': '#fff3e0', # Naranja clarito
+            'IT': '#f3e5f5', # Morado clarito
+        }
+        color = colores.get(obj.language, '#ffffff')
+        return format_html(
+            '<span style="background-color: {}; padding: 5px; border-radius: 5px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_language_display()
+        )
+    
+    etiqueta_idioma.short_description = "Grupo/Idioma"
+    
+    # 2. Creamos la función del botón
+    def ver_mapa(self, obj):
+        if obj.pickup_location_details and obj.pickup_location_details.gps_coordinates:
+            # Limpiamos posibles espacios en blanco
+            coords = obj.pickup_location_details.gps_coordinates.strip()
+            url = f"https://www.google.com/maps/search/?api=1&query={coords}"
+            return format_html(
+                '<a href="{}" target="_blank" style="'
+                'background-color: #447e9b; color: white; padding: 3px 10px; '
+                'border-radius: 4px; text-decoration: none; font-weight: bold;'
+                '">📍 Ver Mapa</a>', 
+                url
+            )
+        return "No GPS"
+    
+    ver_mapa.short_description = "Mapa" # Nombre de la columna
+    
     # Esta función calcula el total de personas para los registros seleccionados
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
@@ -106,6 +179,12 @@ class BookingAdmin(admin.ModelAdmin):
             from .signals import log_eliminacion
             log_eliminacion(sender=obj.__class__, instance=obj)
         queryset.delete()
+        
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        # Esto es solo un extra para que los placeholders ayuden al rellenar
+        form.base_fields['num_people'].widget.attrs['placeholder'] = 'Ej: 4'
+        return form
 
 # Registramos el resto de modelos para poder meter datos
 #admin.site.register(Provider)

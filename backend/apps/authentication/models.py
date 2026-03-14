@@ -80,13 +80,56 @@ class Provider(models.Model):
     def __str__(self):
         return self.name
 
+class ClientAddress(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Nom de l'adresse (Ex: Maison, Bureau)")
+    full_address = models.TextField(verbose_name="Adresse complète")
+    city = models.CharField(max_length=100, blank=True, null=True, verbose_name="Ville")
+    postal_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Code Postal")
+
+    def __str__(self):
+        return f"{self.name} - {self.city}"
+
+    class Meta:
+        verbose_name = "Adresse du Client"
+        verbose_name_plural = "Adresses des Clients"
+
+
 # 2. Clients
 class Client(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nom du Client")
     phone = models.CharField(max_length=50, blank=True, null=True, verbose_name="Téléphone")
     email = models.EmailField(blank=True, null=True, verbose_name="E-mail")
-    address = models.TextField(blank=True, null=True, verbose_name="Adresse Principale")
+    #address = models.TextField(blank=True, null=True, verbose_name="Adresse Principale")
+    # RELACIÓN DINÁMICA CON EL NUEVO MODELO
+    client_address_link = models.ForeignKey(
+        ClientAddress, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Adresse Principale",
+        related_name="clients"
+    )
     language = models.CharField(max_length=50, blank=True, null=True, verbose_name="Langue préférée")
+    
+    # --- CAMBIO AQUÍ: Relación con Excursión ---
+    # Lo ponemos null=True y blank=True para que los clientes que ya tienes creados no den error
+    excursion = models.ForeignKey(
+        'Excursion', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Excursion associée"
+    )
+    
+    # --- NUEVO CAMPO: Relación con Provider ---
+    provider = models.ForeignKey(
+        'Provider', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Fournisseur / Agence",
+        related_name="clients"
+    )
 
     def __str__(self):
         return self.name
@@ -126,6 +169,35 @@ class Excursion(models.Model):
 
     def __str__(self):
         return self.name
+    
+# 8. Ubicaciones / Puntos de recogida
+class Location(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Nom del Lieu (Hôtel/Point)")
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Adresse")
+    
+    # El campo que te pidieron para notas específicas
+    pickup_instructions = models.TextField(
+        blank=True, 
+        null=True, 
+        verbose_name="Instructions de prise en charge",
+        help_text="Ex: Attendre devant la porte principale"
+    )
+    
+    # Campo GPS: Lo guardaremos como texto para que sea fácil copiar y pegar de Google Maps
+    gps_coordinates = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True, 
+        verbose_name="Coordonnées GPS",
+        help_text="Ex: 35.7642, -5.8184"
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Lieu de prise en charge"
+        verbose_name_plural = "Lieux de prise en charge"
 
 # 7. Réservations (Le coeur du système)
 class Booking(models.Model):
@@ -173,15 +245,34 @@ class Booking(models.Model):
     )
     
     # Campo 2: La ubicación específica (Tu nota a bolígrafo "Localisation de la prise en charge")
-    pickup_location_detail = models.CharField(
-        max_length=255, 
-        blank=True, 
-        null=True, 
+    # pickup_location_detail = models.CharField(
+    #     max_length=255, 
+    #     blank=True, 
+    #     null=True, 
+    #     verbose_name="Localisation de la prise en charge",
+    #     help_text="Ex: Porte principale, Réception, Devant le café"
+    # )
+    
+    pickup_location_details = models.ForeignKey(
+        Location, 
+        on_delete=models.PROTECT, 
+        related_name='bookings',
         verbose_name="Localisation de la prise en charge",
-        help_text="Ex: Porte principale, Réception, Devant le café"
+        help_text="Ex: Porte principale, Réception, Devant le café",
+        null=True,   # <-- AÑADE ESTO
+        blank=True   # <-- AÑADE ESTO
     )
     observations = models.TextField(blank=True, null=True, verbose_name="Observations")
-
+    
+    class Meta:
+        verbose_name = "Booking"
+        verbose_name_plural = "Bookings"
+        # AQUÍ ESTÁ EL TRUCO:
+        # 1. Por el nombre de la excursión
+        # 2. Por el idioma
+        # 3. Por el nombre del lugar de recogida (pickup_location_details)
+        ordering = ['excursion__name', 'language', 'pickup_location_details__name']
+        
     def __str__(self):
         return f"{self.date} {self.time} - {self.client.name}"
     
